@@ -1,9 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"log"
+	"math/rand"
 	"time"
 )
 
@@ -56,15 +58,37 @@ func disconnect(client mqtt.Client) {
 	client.Disconnect(250)
 }
 
+type AirportInfo struct {
+	Id          int
+	IdAirport   int
+	MeasureType string
+	Value       float32
+	Time        string
+}
+
 func main() {
 
 	client := connect("tcp://localhost:1883", "airport")
 
-	/*client.Subscribe("topic", 0, func(client mqtt.Client, msg mqtt.Message) {
-		fmt.Printf("%s\n", msg.Payload())
-	})*/
-	for i := 0; i < 100; i++ {
+	for true {
+		data := &AirportInfo{
+			Id:          1,
+			IdAirport:   1,
+			MeasureType: "Temperature",
+			Value:       rand.Float32() * 100,
+			Time:        time.Now().String(),
+		}
 
-		client.Publish("test", 0, false, fmt.Sprint("test", i))
+		dataJson, err := json.Marshal(data)
+
+		if err != nil {
+			fmt.Printf("Error: %s", err)
+			return
+		}
+
+		fmt.Println(string(dataJson))
+
+		client.Publish("test", 0, false, string(dataJson))
+		time.Sleep(10 * time.Second)
 	}
 }
