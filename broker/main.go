@@ -1,13 +1,17 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
+	"strconv"
 	"sync"
 	"time"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func main() {
@@ -91,26 +95,51 @@ type AirportInfo struct {
 func saveDb(message string) {
 	var info AirportInfo
 	json.Unmarshal([]byte(message), &info)
+	t, error := time.Parse("yyyy-mm-dd-hh-mm-ss", info.Time)
+	var date string
+	if error != nil {
+		date = t.String()
+	}
+
+
 
 	clientOptions := options.Client().
-		ApplyURI("mongodb+srv://Mael:<password>@cluster0.5j16q.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
+		ApplyURI("mongodb+srv://Mael:Argenttropbien@cluster0.5j16q.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	airportDatabase := client.Database("airport")
+	sensorCollection := airportDatabase.Collection("sensor")
+
+	_, err = sensorCollection.InsertOne(ctx, bson.D{
+		{Key: "IdSensor", Value: info.Id},
+		{Key: "IdAirport", Value: info.IdAirport},
+		{Key: "MeasureType", Value: info.MeasureType},
+		{Key: "Value", Value: info.Value},
+		{Key: "Time", Value: date},
+	})
+
+	if err != nil{
+		log.Fatal(err)
+	}
+
+	fmt.Println("Inserted documents into sensor collection !")
 }
 
 func saveFile(message string) {
 	var info AirportInfo
 	json.Unmarshal([]byte(message), &info)
-	var filename string
+	filename := "C:\\Users\\maels\\Documents\\imt\\archiD\\Go\\airportWeather\\"
 	filename += info.IdAirport
-	t, error := time.Parse("yyyy-mm-dd-hh-mm-ss", message)
+	t, error := time.Parse("yyyy-mm-dd-hh-mm-ss", info.Time)
 	if error != nil {
-		filename += t.String()
+		filename += strconv.Itoa(t.Day()) +t.Month().String() + strconv.Itoa(t.Year())
 	}
+	filename += ".csv"
 	fmt.Println(filename)
 
 }
