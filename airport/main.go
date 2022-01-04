@@ -6,17 +6,22 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"log"
 	"math/rand"
+	"os"
+	"strconv"
 	"time"
 )
 
-var AIRPORT_ID = "CDG"
+type Config struct {
+	BrokerAddress string
+	BrokerPort    int
+	QoS           byte
+	ClientId      string
+}
 
 func createClientOptions(brokerURI string, clientId string) *mqtt.ClientOptions {
 
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(brokerURI)
-	// opts.SetUsername(user)
-	// opts.SetPassword(password)
 	opts.SetClientID(clientId)
 	return opts
 }
@@ -47,11 +52,11 @@ type AirportInfo struct {
 	Time        string
 }
 
-func createSensor(client mqtt.Client, sensorId int, name string, generateValue func() float32) {
+func createSensor(client mqtt.Client, airportId string, sensorId int, name string, qos byte, generateValue func() float32) {
 
 	data := &AirportInfo{
 		Id:          sensorId,
-		IdAirport:   AIRPORT_ID,
+		IdAirport:   airportId,
 		MeasureType: name,
 		Value:       generateValue(),
 		Time:        time.Now().String(),
@@ -66,7 +71,7 @@ func createSensor(client mqtt.Client, sensorId int, name string, generateValue f
 
 	fmt.Println(string(dataJson))
 
-	client.Publish("test", 0, false, string(dataJson))
+	client.Publish("test", qos, false, string(dataJson))
 }
 
 func generateTemp() float32 {
@@ -83,12 +88,22 @@ func generateWind() float32 {
 
 func main() {
 
-	client := connect("tcp://localhost:1883", AIRPORT_ID)
+	// Read config file
+	var config Config
+	file, _ := os.Open("config.json")
+	defer file.Close()
+	decoder := json.NewDecoder(file)
+	err := decoder.Decode(&config)
+	if err != nil {
+		fmt.Println("error:", err)
+	}
+
+	client := connect(config.BrokerAddress+":"+strconv.Itoa(config.BrokerPort), config.ClientId)
 
 	for true {
-		createSensor(client, 1, "Temperature", generateTemp)
-		createSensor(client, 2, "Atmospheric pressure", generatePress)
-		createSensor(client, 3, "Wind speed", generateWind)
+		createSensor(client, config.ClientId, 1, "Temperature", config.QoS, generateTemp)
+		createSensor(client, config.ClientId, 2, "Atmospheric pressure", config.QoS, generatePress)
+		createSensor(client, config.ClientId, 3, "Wind speed", config.QoS, generateWind)
 		time.Sleep(10 * time.Second)
 	}
 }
