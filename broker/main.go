@@ -85,7 +85,7 @@ func disconnect(client mqtt.Client) {
 }
 
 type AirportInfo struct {
-	Id          int
+	IdSensor    int
 	IdAirport   string
 	MeasureType string
 	Value       float32
