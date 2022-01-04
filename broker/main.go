@@ -17,6 +17,9 @@ func main() {
 	/*for i := 0; i < 100; i++ {
 		client.Publish("topic", 0, false, "emilien est nul")
 	}*/
+	for true{
+
+	}
 }
 
 
