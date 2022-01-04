@@ -1,11 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"log"
 	"sync"
 	"time"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func main() {
@@ -16,23 +18,18 @@ func main() {
 	wg.Add(1)
 	go func() {
 		subscribe(client, "test", 0, func(client mqtt.Client, msg mqtt.Message) {
-		fmt.Printf("%s\n", msg.Payload())})
+			saveFile(string(msg.Payload()))
+			saveDb(string(msg.Payload()))
+		})
 	}()
-
-
-
-
-
-
 
 	wg.Wait()
 	/*
-	for i := 0; i < 100; i++ {
-		client.Publish("topic", 0, false, "emilien est nul")
-	}*/
+		for i := 0; i < 100; i++ {
+			client.Publish("topic", 0, false, "emilien est nul")
+		}*/
 
 }
-
 
 func createClientOptions(brokerURI string, clientId string) *mqtt.ClientOptions {
 
@@ -81,4 +78,39 @@ func unsubscribe(client mqtt.Client, topic string) {
 
 func disconnect(client mqtt.Client) {
 	client.Disconnect(250)
+}
+
+type AirportInfo struct {
+	Id          int
+	IdAirport   string
+	MeasureType string
+	Value       float32
+	Time        string
+}
+
+func saveDb(message string) {
+	var info AirportInfo
+	json.Unmarshal([]byte(message), &info)
+
+	clientOptions := options.Client().
+		ApplyURI("mongodb+srv://Mael:<password>@cluster0.5j16q.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	client, err := mongo.Connect(ctx, clientOptions)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func saveFile(message string) {
+	var info AirportInfo
+	json.Unmarshal([]byte(message), &info)
+	var filename string
+	filename += info.IdAirport
+	t, error := time.Parse("yyyy-mm-dd-hh-mm-ss", message)
+	if error != nil {
+		filename += t.String()
+	}
+	fmt.Println(filename)
+
 }
