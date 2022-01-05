@@ -45,21 +45,21 @@ func disconnect(client mqtt.Client) {
 }
 
 type AirportInfo struct {
-	Id          int
+	IdSensor    int
 	IdAirport   string
 	MeasureType string
 	Value       float32
 	Time        string
 }
 
-func createSensor(client mqtt.Client, airportId string, sensorId int, name string, qos byte, generateValue func() float32) {
+func createSensor(client mqtt.Client, airportId string, sensorId int, measureType string, qos byte, generateValue func() float32) {
 
 	data := &AirportInfo{
-		Id:          sensorId,
+		IdSensor:    sensorId,
 		IdAirport:   airportId,
-		MeasureType: name,
+		MeasureType: measureType,
 		Value:       generateValue(),
-		Time:        time.Now().String(),
+		Time:        time.Now().Format("2006-01-02-15-04-05"),
 	}
 
 	dataJson, err := json.Marshal(data)
