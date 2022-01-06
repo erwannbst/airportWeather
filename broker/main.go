@@ -9,10 +9,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
+	"os"
 	"strconv"
 	"sync"
 	"time"
-	"os"
 )
 
 func main() {
@@ -96,12 +96,6 @@ type AirportInfo struct {
 func saveDb(message string) {
 	var info AirportInfo
 	json.Unmarshal([]byte(message), &info)
-	t, err := time.Parse("yyyy-mm-dd-hh-mm-ss", info.Time)
-	var date string
-	if err != nil {
-		date = t.String()
-	}
-
 
 
 	clientOptions := options.Client().
@@ -119,7 +113,7 @@ func saveDb(message string) {
 		{Key: "IdAirport", Value: info.IdAirport},
 		{Key: "MeasureType", Value: info.MeasureType},
 		{Key: "Value", Value: info.Value},
-		{Key: "Time", Value: date},
+		{Key: "Time", Value: info.Time},
 	})
 
 	check(err)
@@ -132,7 +126,8 @@ func saveFile(message string) {
 	json.Unmarshal([]byte(message), &info)
 	filename := "C:\\Users\\maels\\Documents\\imt\\archiD\\Go\\airportWeather\\"
 	filename += info.IdAirport
-	t, error := time.Parse("2006-01-02-15-04-05", info.Time)
+	t, err := time.Parse("2006-01-02-15-04-05", info.Time)
+	check(err)
 
 	var day string
 
@@ -152,18 +147,14 @@ func saveFile(message string) {
 
 	year := strconv.Itoa(t.Year())
 
-	if error != nil {
-		filename += day +month + year
-	}
-	filename += ".csv"
 
-	fmt.Println(filename)
+	filename += day +month + year+".txt"
 
-	f, err := os.Create(filename)
+	f, err := os.OpenFile(filename, os.O_RDWR|os.O_APPEND, 0660);
 	check(err)
-	_, err = f.WriteString(message)
+	_, err = f.WriteString(message+"\n")
 	check(err)
-	fmt.Println("information wrote in file")
+	fmt.Println("save in file")
 
 
 }
