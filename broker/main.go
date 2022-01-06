@@ -2,7 +2,10 @@ package main
 
 import (
 	"context"
+	"encoding/csv"
+	_ "encoding/csv"
 	"encoding/json"
+	"errors"
 	"fmt"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"go.mongodb.org/mongo-driver/bson"
@@ -66,23 +69,9 @@ func connect(brokerURI string, clientId string) mqtt.Client {
 
 }
 
-func publish(client mqtt.Client, topic string, qos byte, payload string) {
-	token := client.Publish(topic, qos, false, payload)
-	token.Wait()
-}
-
 func subscribe(client mqtt.Client, topic string, qos byte, callback mqtt.MessageHandler) {
 	token := client.Subscribe(topic, qos, callback)
 	token.Wait()
-}
-
-func unsubscribe(client mqtt.Client, topic string) {
-	token := client.Unsubscribe(topic)
-	token.Wait()
-}
-
-func disconnect(client mqtt.Client) {
-	client.Disconnect(250)
 }
 
 type AirportInfo struct {
@@ -96,7 +85,6 @@ type AirportInfo struct {
 func saveDb(message string) {
 	var info AirportInfo
 	json.Unmarshal([]byte(message), &info)
-
 
 	clientOptions := options.Client().
 		ApplyURI("mongodb+srv://Mael:Argenttropbien@cluster0.5j16q.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
@@ -118,44 +106,64 @@ func saveDb(message string) {
 
 	check(err)
 
-	fmt.Println("Inserted documents into sensor collection !")
+	fmt.Println("Inserted data into sensor collection !")
 }
 
 func saveFile(message string) {
 	var info AirportInfo
 	json.Unmarshal([]byte(message), &info)
-	filename := "C:\\Users\\maels\\Documents\\imt\\archiD\\Go\\airportWeather\\"
-	filename += info.IdAirport
+	filename := "../datalake/"
 	t, err := time.Parse("2006-01-02-15-04-05", info.Time)
 	check(err)
 
 	var day string
 
-	if(t.Day()<10){
+	if t.Day() < 10 {
 		day = "0" + strconv.Itoa(t.Day())
-	}else{
-		day= strconv.Itoa(t.Day())
+	} else {
+		day = strconv.Itoa(t.Day())
 	}
 
 	var month string
 
-	if(int(t.Month()) <10){
+	if int(t.Month()) < 10 {
 		month = "0" + strconv.Itoa(int(t.Month()))
-	}else{
+	} else {
 		month = strconv.Itoa(int(t.Month()))
 	}
 
 	year := strconv.Itoa(t.Year())
 
+	filename += info.IdAirport + "-" + year + "-" + month + "-" + day + ".csv"
+	var f *os.File
 
-	filename += day +month + year+".txt"
+	if _, err := os.Stat(filename); errors.Is(err, os.ErrNotExist) {
+		f, err = os.OpenFile(filename, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0660)
+		check(err)
+		_, err = f.WriteString("sep=,\n\"IdSensor\", \"IdAirport\", \"MeasureType\", \"Value\", \"Time\"\n")
+		check(err)
 
-	f, err := os.OpenFile(filename, os.O_RDWR|os.O_APPEND, 0660);
+	} else {
+		f, err = os.OpenFile(filename, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0660)
+		check(err)
+
+	}
+	defer f.Close()
+
+	csvwriter := csv.NewWriter(f)
+	empData := [][]string{
+
+		{strconv.Itoa(info.IdSensor), info.IdAirport, info.MeasureType, fmt.Sprintf("%f", info.Value), info.Time},
+	}
+
+	for _, empRow := range empData {
+		_ = csvwriter.Write(empRow)
+	}
+
+	csvwriter.Flush()
+
 	check(err)
-	_, err = f.WriteString(message+"\n")
-	check(err)
-	fmt.Println("save in file")
-
+	fmt.Println("Inserted data into " + filename + " !")
 
 }
 
