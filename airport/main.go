@@ -91,14 +91,14 @@ func generateTemp() float32 {
 	return rand.Float32() * 100
 }
 
-// Generate a value for atmospheric pression between 990 and 1050
+// Generate a value for atmospheric pressure between 990 and 1050
 func generatePress() float32 {
 	return 990 + rand.Float32()*60
 }
 
-// Generate a value for wind between 0 and 100
+// Generate a value for wind speed between 0 and 120
 func generateWind() float32 {
-	return rand.Float32() * 100
+	return rand.Float32() * 120
 }
 
 func main() {
