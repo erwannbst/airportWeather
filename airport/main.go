@@ -83,7 +83,7 @@ func createSensor(client mqtt.Client, airportId string, sensorId int, measureTyp
 
 	fmt.Println(string(dataJson))
 
-	client.Publish("test", qos, false, string(dataJson))
+	client.Publish("airport", qos, false, string(dataJson))
 }
 
 // Generate a value for temperature between 0 and 100
