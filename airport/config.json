@@ -1,6 +1,6 @@
 {
     "BrokerAddress": "tcp://localhost",
     "BrokerPort": 1883,
-    "QoS": 0,
+    "QoS": 2,
     "ClientId": "CDG"
 }

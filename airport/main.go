@@ -16,7 +16,7 @@ type Config struct {
 	BrokerAddress string
 	BrokerPort    int
 	QoS           byte
-	ClientId      string
+	ClientId      string // equals to airport IATA code
 }
 
 func createClientOptions(brokerURI string, clientId string) *mqtt.ClientOptions {
@@ -116,7 +116,7 @@ func main() {
 	// Connect to the broker
 	client := connect(config.BrokerAddress+":"+strconv.Itoa(config.BrokerPort), config.ClientId)
 
-	// Create sensor and send data to the broker every 10 seconds
+	// Create sensors and send data to the broker every 10 seconds
 	for true {
 		createSensor(client, config.ClientId, 1, "Temperature", config.QoS, generateTemp)
 		createSensor(client, config.ClientId, 2, "Atmospheric pressure", config.QoS, generatePress)
