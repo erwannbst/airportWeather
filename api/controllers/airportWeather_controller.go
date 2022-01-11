@@ -14,7 +14,7 @@ import (
 
 var sensorCollection *mongo.Collection = configs.GetCollection(configs.DB, "sensor")
 
-func GetMeasureByType(c *fiber.Ctx) error {
+func GetMeasuresByType(c *fiber.Ctx) error {
 
 	measureType := c.Query("measure_type")
 	startDate := c.Query("start_date")
