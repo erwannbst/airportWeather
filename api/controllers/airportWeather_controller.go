@@ -23,8 +23,6 @@ func GetMeasuresByType(c *fiber.Ctx) error {
 	var measures []models.AirportInfo
 	defer cancel()
 
-	//db.sensor.aggregate([{$match:{"MeasureType":"Wind speed","Time":{$gte:"2022-01-09",$lte:"2022-01-10"}}}])
-
 	matchStage := bson.D{{
 		"$match", bson.D{{"MeasureType", measureType},{"Time",bson.D{{"$gte",startDate},{"$lte", endDate}}}}}}
 
