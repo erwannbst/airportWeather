@@ -99,7 +99,7 @@ func saveFile(message string) {
 	t, err := time.Parse("2006-01-02-15-04-05", info.Time)
 	check(err)
 
-	//format the date 
+	//format the date
 	var day string
 	if t.Day() < 10 {
 		day = "0" + strconv.Itoa(t.Day())
