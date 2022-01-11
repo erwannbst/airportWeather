@@ -18,6 +18,16 @@ import (
 	"time"
 )
 
+type Config struct {
+	BrokerAddress string
+	ClientId      string
+	Topic         string
+	MongoURI      string
+	Database      string
+	Collection    string
+	CsvDirectory  string
+}
+
 // AirportInfo Data structure of the incoming messages/**
 type AirportInfo struct {
 	IdSensor    int
@@ -29,20 +39,29 @@ type AirportInfo struct {
 
 /**
 listen the publishers
- */
+*/
 func main() {
 
-	//connection to the broker
-	client := connect("tcp://localhost:1883", "my-client-id")
+	// Read config file
+	var config Config
+	file, _ := os.Open("config.json")
+	defer file.Close()
+	decoder := json.NewDecoder(file)
+	err := decoder.Decode(&config)
+	if err != nil {
+		fmt.Println("error:", err)
+	}
 
+	//connection to the broker
+	client := connect(config.BrokerAddress, config.ClientId)
 
 	var wg sync.WaitGroup
 	wg.Add(1)
 	//save the messages received into database and csv file
 	go func() {
-		subscribe(client, "airport", 0, func(client mqtt.Client, msg mqtt.Message) {
-			saveFile(string(msg.Payload()))
-			saveDb(string(msg.Payload()))
+		subscribe(client, config.Topic, 0, func(client mqtt.Client, msg mqtt.Message) {
+			saveFile(config, string(msg.Payload()))
+			saveDb(config, string(msg.Payload()))
 		})
 	}()
 	wg.Wait()
@@ -51,8 +70,8 @@ func main() {
 
 /**
 Save the message into Mongodb Atlas
- */
-func saveDb(message string) {
+*/
+func saveDb(config Config, message string) {
 
 	//convert message into json format
 	var info AirportInfo
@@ -60,15 +79,15 @@ func saveDb(message string) {
 
 	//connect to the db
 	clientOptions := options.Client().
-		ApplyURI("mongodb+srv://Mael:Argenttropbien@cluster0.5j16q.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
+		ApplyURI(config.MongoURI)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	client, err := mongo.Connect(ctx, clientOptions)
 	check(err)
 
 	//move to the collection sensor in the airport database
-	airportDatabase := client.Database("airport")
-	sensorCollection := airportDatabase.Collection("sensor")
+	airportDatabase := client.Database(config.Database)
+	sensorCollection := airportDatabase.Collection(config.Collection)
 
 	//insert data
 	_, err = sensorCollection.InsertOne(ctx, bson.D{
@@ -86,15 +105,15 @@ func saveDb(message string) {
 
 /**
 Save message in a csv file
- */
-func saveFile(message string) {
+*/
+func saveFile(config Config, message string) {
 
 	//convert message into json format
 	var info AirportInfo
 	json.Unmarshal([]byte(message), &info)
 
 	//path of the datalake
-	filename := "../datalake/"
+	filename := config.CsvDirectory
 
 	t, err := time.Parse("2006-01-02-15-04-05", info.Time)
 	check(err)
@@ -159,7 +178,7 @@ func saveFile(message string) {
 
 /**
 Manage the errors
- */
+*/
 func check(e error) {
 	if e != nil {
 		panic(e)

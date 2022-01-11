@@ -1,0 +1,9 @@
+{
+  "BrokerAddress": "tcp://localhost:1883",
+  "ClientId": "my-client-id",
+  "Topic": "airport",
+  "MongoURI": "mongodb+srv://Mael:Argenttropbien@cluster0.5j16q.mongodb.net/myFirstDatabase?retryWrites=true&w=majority",
+  "Database": "airport",
+  "Collection": "sensor",
+  "CsvDirectory": "../datalake/"
+}
