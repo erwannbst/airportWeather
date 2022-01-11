@@ -8,3 +8,8 @@ type AirportInfo struct {
 	Value 			float32     `json:"Value"`
 	Time 			string     `json:"Time"`
 }
+
+type AverageMeasuresInfo struct {
+	Id      string `json:"id" bson:"_id,omitempty"`
+	AvgValue float64 `json:"AvgValue,truncate"`
+}

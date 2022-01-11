@@ -32,13 +32,14 @@ func GetAMeasure(c *fiber.Ctx) error {
 
 func GetAllMeasures(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	var measures []models.AirportInfo
+	var measures []models.AverageMeasuresInfo
 	defer cancel()
 
-
-	//matchStage := bson.D{{"$match", bson.D{{"podcast", id}}}}
-	//groupStage := bson.D{{"$group", bson.D{{"_id", "$podcast"}, {"total", bson.D{{"$sum", "$duration"}}}}}}
-	results, err := sensorCollection.Aggregate(ctx, mongo.Pipeline{})
+	day := c.Params("day")
+	matchStage := bson.D{{
+		"$match", bson.D{{"Time", bson.M{"$gte": day+"-00-00-00", "$lte": day+"23-59-59"}}}}}
+	groupStage := bson.D{{"$group", bson.D{{"_id", "$MeasureType"}, {"AvgValue", bson.D{{"$avg", "$Value"}}}}}}
+	results, err := sensorCollection.Aggregate(ctx, mongo.Pipeline{matchStage,groupStage})
 
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(responses.AirportWeatherResponse{Status: http.StatusInternalServerError, Message: "error", Data: &fiber.Map{"data": err.Error()}})
@@ -47,12 +48,13 @@ func GetAllMeasures(c *fiber.Ctx) error {
 	//reading from the db in an optimal way
 	defer results.Close(ctx)
 	for results.Next(ctx) {
-		var singleMeasure models.AirportInfo
+		var singleMeasure models.AverageMeasuresInfo
 		if err = results.Decode(&singleMeasure); err != nil {
 			return c.Status(http.StatusInternalServerError).JSON(responses.AirportWeatherResponse{Status: http.StatusInternalServerError, Message: "error", Data: &fiber.Map{"data": err.Error()}})
 		}
 
 		measures = append(measures, singleMeasure)
+
 	}
 
 	return c.Status(http.StatusOK).JSON(
