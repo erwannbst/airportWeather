@@ -1,0 +1,5 @@
+sep=,
+"IdSensor", "IdAirport", "MeasureType", "Value", "Time"
+1,CDG,Temperature,60.466026,2022-01-11-14-32-48
+2,CDG,Atmospheric pressure,1046.430542,2022-01-11-14-32-48
+3,CDG,Wind speed,79.747208,2022-01-11-14-32-48
