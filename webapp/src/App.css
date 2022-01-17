@@ -16,12 +16,17 @@
 
 .App-header {
   text-align: center;
-  font-size: calc(10px + 2vmin);
+  font-size: calc(23px + 2vmin);
 }
 
 #body {
-  width: 100%;
+  width: 80%;
+  margin: auto;
   min-height: 100vh;
+}
+
+h1 {
+  text-align: center;
 }
 
 .part {
