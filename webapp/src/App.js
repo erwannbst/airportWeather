@@ -95,7 +95,7 @@ function App() {
       </header>
       <div id="body">
       <div className="part divG">
-        <h1>Par jour</h1>
+        <h1>Measures by day</h1>
           <DatePicker selected={selectDate} onChange={date => statByDay(date)}/>
           {byDayData}
         </div>
